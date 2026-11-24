@@ -82,6 +82,11 @@ jobs:
           # function declarations fatal (they truncate pointers at runtime).
           KFLAGS="-Wno-error -Werror=implicit-function-declaration"
           make O=../out merge_kirin980_defconfig
+          # MyOS does not use the cellular baseband, and the modem link step
+          # exceeds ARG_MAX in this container. Disable it.
+          ./scripts/config --file ../out/.config -d HISI_BALONG_MODEM
+          ./scripts/config --file ../out/.config -d HISI_BALONG_EXTRA_MODEM
+          ./scripts/config --file ../out/.config -d HISI_BALONG_EXTRA_MODEM_MBB
           # keep the config self-consistent with this compiler
           make O=../out olddefconfig
           make O=../out HOSTCFLAGS="$HOSTFLAGS" KCFLAGS="$KFLAGS" -j"$(nproc)" Image.gz
