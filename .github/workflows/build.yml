@@ -49,9 +49,12 @@ jobs:
           cd Code_Opensource/kernel
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
+          # kernel 4.9's dtc lexer/parser rely on -fcommon; GCC >=10 defaults to
+          # -fno-common and the host build dies with "multiple definition of yylloc"
+          HOSTFLAGS="-Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89 -fcommon"
           make O=../out merge_kirin980_defconfig
           make O=../out olddefconfig
-          make O=../out -j"$(nproc)" Image.gz
+          make O=../out HOSTCFLAGS="$HOSTFLAGS" -j"$(nproc)" Image.gz
 
       - name: Collect artifacts
         run: |
