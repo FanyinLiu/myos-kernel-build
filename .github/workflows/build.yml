@@ -50,19 +50,28 @@ jobs:
             patch -p1 -i "$p"
           done
 
-      - name: Configure and build
+      - name: Relax Huawei's -Werror flags
         shell: bash
         run: |
-          set -euo pipefail
           cd Code_Opensource/kernel
           # Several Huawei driver Makefiles append a bare `-Werror` to
           # EXTRA_CFLAGS, which lands after KBUILD_CFLAGS and turns every GCC 9
           # warning into a build failure. Demote only the bare form; leave
           # -Werror=<specific> and -Werror-<specific> alone so cc-option probes
           # keep working.
-          grep -rl -- '-Werror' --include=Makefile --include=Kbuild --include='*.mk' . 2>/dev/null \
-            | xargs -r sed -i -E 's/-Werror([[:space:]]|$)/-Wno-error\1/g'
-          echo "bare -Werror left: $(grep -rn -- '-Werror[[:space:]]' --include=Makefile --include=Kbuild --include='*.mk' . 2>/dev/null | wc -l)"
+          set +e
+          grep -rl -- '-Werror' --include=Makefile --include=Kbuild --include='*.mk' . 2>/dev/null > /tmp/wfiles.txt
+          echo "files with -Werror: $(wc -l < /tmp/wfiles.txt)"
+          xargs -r sed -i -E 's/-Werror([[:space:]]|$)/-Wno-error\1/g' < /tmp/wfiles.txt
+          echo "sed exit: $?"
+          grep -rn -- '-Werror[[:space:]]' --include=Makefile --include=Kbuild --include='*.mk' . 2>/dev/null | head -3
+          echo "relax done"
+
+      - name: Configure and build
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd Code_Opensource/kernel
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           # kernel 4.9's dtc lexer/parser rely on -fcommon; GCC >=10 defaults to
