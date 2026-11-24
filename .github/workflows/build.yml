@@ -55,13 +55,14 @@ jobs:
         run: |
           set -euo pipefail
           cd Code_Opensource/kernel
-          # Huawei's tree scatters -Werror across Makefiles, Kconfigs and the
-          # compiler flags; those diagnostics did not exist in GCC 4.9. Demote
-          # every one of them across the whole tree.
-          grep -rl -- '-Werror' . 2>/dev/null \
-            | grep -vE '\.(o|cmd|a)$' \
-            | xargs -r sed -i 's/-Werror/-Wno-error/g'
-          echo "remaining -Werror: $(grep -rl -- '-Werror' . 2>/dev/null | grep -vE '\.(o|cmd|a)$' | wc -l)"
+          # Several Huawei driver Makefiles append a bare `-Werror` to
+          # EXTRA_CFLAGS, which lands after KBUILD_CFLAGS and turns every GCC 9
+          # warning into a build failure. Demote only the bare form; leave
+          # -Werror=<specific> and -Werror-<specific> alone so cc-option probes
+          # keep working.
+          grep -rl -- '-Werror' --include=Makefile --include=Kbuild --include='*.mk' . 2>/dev/null \
+            | xargs -r sed -i -E 's/-Werror([[:space:]]|$)/-Wno-error\1/g'
+          echo "bare -Werror left: $(grep -rn -- '-Werror[[:space:]]' --include=Makefile --include=Kbuild --include='*.mk' . 2>/dev/null | wc -l)"
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           # kernel 4.9's dtc lexer/parser rely on -fcommon; GCC >=10 defaults to
