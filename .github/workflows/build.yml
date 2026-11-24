@@ -8,23 +8,23 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    # Ubuntu 20.04 ships GCC 9.4 for aarch64 — close enough to the 4.9 the
+    # Huawei README asks for, and unlike third-party toolchain mirrors it is a
+    # complete, self-consistent install. node20 (actions/checkout) needs
+    # glibc >= 2.28, so 20.04 is the oldest container that still works.
+    container: ubuntu:20.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
 
       - name: Install build deps
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential bc bison flex libssl-dev \
-            libelf-dev cpio rsync wget xz-utils git
-          # The Huawei kernel requires the exact toolchain from its README
-          # (aarch64-linux-android-4.9). Newer GCC trips on its 4.9-era APIs.
-          git clone --depth 1 -b google \
-            https://github.com/growtopiajaw/aarch64-linux-android-4.9 \
-            "$HOME/tc"
-          ls "$HOME/tc/bin" | head -5
-          chmod +x "$HOME/tc/bin/"* 2>/dev/null || true
-          "$HOME/tc/bin/aarch64-linux-android-gcc" --version | head -1
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y build-essential bc bison flex libssl-dev libelf-dev \
+            gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+            cpio rsync wget xz-utils git ca-certificates
+          aarch64-linux-gnu-gcc --version | head -1
 
       - name: Fetch kernel source (mirrored release asset)
         env:
@@ -55,15 +55,12 @@ jobs:
           set -euo pipefail
           cd Code_Opensource/kernel
           export ARCH=arm64
-          export CROSS_COMPILE="$HOME/tc/bin/aarch64-linux-android-"
-          export PATH="$HOME/tc/bin:$PATH"
-          # host tools build with the distro GCC; kernel 4.9's dtc needs -fcommon
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          # kernel 4.9's dtc lexer/parser rely on -fcommon; GCC >=10 defaults to
+          # -fno-common and the host build dies with "multiple definition of yylloc"
           HOSTFLAGS="-Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89 -fcommon"
           make O=../out merge_kirin980_defconfig
-          # GCC 4.9 has no -fstack-protector-strong; the Huawei defconfig
-          # requests it, so drop to the plain stack protector.
-          ./scripts/config --file ../out/.config -d CC_STACKPROTECTOR_STRONG
-          ./scripts/config --file ../out/.config -e CC_STACKPROTECTOR
+          # keep the config self-consistent with this compiler
           make O=../out olddefconfig
           make O=../out HOSTCFLAGS="$HOSTFLAGS" -j"$(nproc)" Image.gz
 
