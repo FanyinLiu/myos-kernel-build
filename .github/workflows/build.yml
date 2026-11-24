@@ -1,0 +1,66 @@
+name: build-kernel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential bc bison flex libssl-dev \
+            libelf-dev gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+            cpio rsync wget xz-utils
+
+      - name: Fetch Huawei kernel source (Yale-AL00A EMUI 9.1.0)
+        run: |
+          set -euo pipefail
+          URL="https://download-c1.huawei.com/download/downloadCenter?downloadId=15443BBA98B512B49181A3475846172D&version=3D2D1D263C24E19E86F07B89ECF94EAC&siteCode=worldwide"
+          wget -q --tries=5 --timeout=120 -O src.tar.gz "$URL"
+          ls -lh src.tar.gz
+          tar xzf src.tar.gz
+          du -sh Code_Opensource
+
+      - name: Apply MyOS patches
+        run: |
+          set -euo pipefail
+          cd Code_Opensource
+          for p in ../patches/*.patch; do
+            echo "applying $p"
+            patch -p1 -i "$p"
+          done
+
+      - name: Configure and build
+        run: |
+          set -euo pipefail
+          cd Code_Opensource/kernel
+          export ARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          make O=../out merge_kirin980_defconfig
+          make O=../out olddefconfig
+          make O=../out -j"$(nproc)" Image.gz
+
+      - name: Collect artifacts
+        run: |
+          set -euo pipefail
+          OUT=Code_Opensource/out/arch/arm64/boot
+          ls -lh "$OUT"
+          mkdir -p artifacts
+          cp "$OUT/Image.gz" artifacts/
+          # device trees: the base config + the YAL-AL00 overlay variants
+          find Code_Opensource/out/arch/arm64/boot/dts -name '*.dtb' 2>/dev/null \
+            -exec cp {} artifacts/ \; || true
+          ls -lh artifacts
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: myos-kernel-yale
+          path: artifacts/
+          retention-days: 30

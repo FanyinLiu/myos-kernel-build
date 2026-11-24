@@ -1,0 +1,116 @@
+--- a/kernel/arch/arm64/boot/dts/auto-generate/config/kirin980/kirin980_fpga_touchscreen.dtsi	2019-04-28 07:53:51
++++ b/kernel/arch/arm64/boot/dts/auto-generate/config/kirin980/kirin980_fpga_touchscreen.dtsi	2026-11-23 19:47:50
+@@ -1,66 +1,44 @@
+ / {
+ 	touchscreen {
+ 		compatible = "huawei,touchscreen";
+-		status = "disabled";
++		status = "ok";
+ 		bus_type = "i2c";
+-		bus_id = <0>;
+-		product = "kirin980_fpga";
++		bus_id = <7>;
++		product = "yale";
+ 		has_virtualkey = <0>;
+ 		roi_supported = <0>;
+-		roi_control_addr_offset = <0x0446>;
+-		roi_data_addr_offset = <0x0418>;
+-		fpga_flag = <1>;
++		fpga_flag = <0>;
+ 		lcd_full = <1375>;
+-		virtual_keys = /* KeyCode CenterX CenterY Width Height */
+-		/* KEY_BACK */
+-		<158 142 1342 150 100
+-		/* KEY_HOME(172) */
+-		172 360 1342 150 100
+-		/* KEY_MENU */
+-		139 578 1342 150 100>;
+ 		support_chip_name = "synaptics";
+ 		synaptics: touchscreen@70 {
+ 			compatible = "synaptics";
+ 			/*0-S3207, 1-S3350, 2-3320*/
+-			ic_type = <0>;
++			ic_type = <6>;
++			is_multi_protocal = <2>;
+ 			need_wd_check_status = <0>;
+-			x_max = <720>;
+-			y_max = <1280>;
+-			x_max_mt = <720>;
+-			y_max_mt = <1280>;
++			x_max = <1080>;
++			y_max = <2340>;
++			x_max_mt = <1080>;
++			y_max_mt = <2340>;
+ 			flip_x = <0>;
+ 			flip_y = <0>;
+-			unite_cap_test_interface =<0>;
+-			report_rate_test =<0>;
+-			vci_gpio_type = <1>;
+-			vci_regulator_type = <0>;
+-			vddio_gpio_type = <1>;
+-			vddio_regulator_type = <0>;
+-			vci_ctrl_gpio = <&gpio17 1 0>;
+-			vddio_ctrl_gpio = <&gpio16 1 0>;
+-			vci_gpio_en_val = <1>;
+-			vddio_gpio_en_val = <0>;
++			unite_cap_test_interface = <1>;
++			report_rate_test = <1>;
++			delay_for_fw_update = <1>;
++			vci_gpio_type = <0>;
++			vci_regulator_type = <1>;
++			vddio_gpio_type = <0>;
++			vddio_regulator_type = <1>;
+ 			slave_address = <0x70>;
+-
++			irq_config = <0>;
++			producer = "SUM";
++			projectid_len = <10>;
+ 			pinctrl-names = "default", "idle";
+-			pinctrl-0 = <>;
+-			pinctrl-1 = <>;
+-
+-
+-			synaptics-vdd-supply;
+-			synaptics-io-supply;
+-			reset_gpio = <&gpio17 2 0>;
+-			attn_gpio = <&gpio14 4 0>;
+-			irq_config = <3>;
+-			algo_id = <2>;
+-			raw_data_limit = "4200", /*rawdata-max*/
+-				"1000", /*rawdata-min*/
+-				"15", /*deltadata-max*/
+-				"-15", /*deltadata-min*/
+-				"490", /*rx-to-rx-diff-max*/
+-				"-490", /*rx-to-rx-diff-min*/
+-				"490", /*tx-to-tx-diff-max*/
+-				"-490";/*tx-to-tx-diff-min*/
++			pinctrl-0 = <&gpio212_cfg_func>;
++			pinctrl-1 = <&gpio212_cfg_idle>;
++			ts-kit-iovdd-type = <1>;
++			ts-kit-iovdd-supply = <&ldo29>;
++			ts-kit-iovdd-value = <1850000>;
+ 		};
+ 	};
+ };
+--- a/kernel/arch/arm64/boot/dts/auto-generate/config/kirin980/kirin980_chip_cs_config.dts	2019-04-28 07:53:51
++++ b/kernel/arch/arm64/boot/dts/auto-generate/config/kirin980/kirin980_chip_cs_config.dts	2026-11-23 19:48:01
+@@ -533,6 +533,19 @@
+ 	/* end amba */
+         /*ts kit*/
+ 	ts_kit: ts_kit {
++		compatible = "huawei,ts_kit";
++		status = "ok";
++		bus_type = "i2c";
++		bus_id = <7>;
++		product = "yale";
++		irq_gpio = <&gpio26 4 0>;
++		reset_gpio = <&gpio1 7 0>;
++		aft_enable = <1>;
++		drv_stop_width = <0>;
++		lcd_width = <0>;
++		lcd_height = <0>;
++		need_i2c_hwlock = <1>;
++		hide_plain_id = <1>;
+ 	};
+ 	hisi_gpio_key: hisi_gpio_key {
+ 	};
