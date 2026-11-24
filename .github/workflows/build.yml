@@ -33,10 +33,10 @@ jobs:
           set -euo pipefail
           # Huawei's own CDN is too slow from GitHub runners, so the tarball is
           # mirrored as a release asset in this repo (see release kernel-source-v1).
-          gh release download kernel-source-v1 \
-            --repo "$GITHUB_REPOSITORY" \
-            --pattern 'yale_pie_opensource.tar.gz' \
-            --output src.tar.gz
+          # The ubuntu:20.04 container has no gh CLI, so download via the API.
+          curl -sSL -H "Authorization: token $GH_TOKEN" \
+            -o src.tar.gz \
+            "https://github.com/${GITHUB_REPOSITORY}/releases/download/kernel-source-v1/yale_pie_opensource.tar.gz"
           ls -lh src.tar.gz
           tar xzf src.tar.gz
           du -sh Code_Opensource
