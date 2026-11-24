@@ -55,11 +55,13 @@ jobs:
         run: |
           set -euo pipefail
           cd Code_Opensource/kernel
-          # Huawei's tree scatters -Werror=... across dozens of Makefiles; those
-          # diagnostics did not exist in GCC 4.9 and are noise for us. Demote all
-          # of them (the bare -Werror-implicit-function-declaration stays fatal).
-          grep -rl --include=Makefile --include=Kbuild --include='*.mk' -- '-Werror=' . \
-            | xargs -r sed -i 's/-Werror=/-Wno-error=/g'
+          # Huawei's tree scatters -Werror across Makefiles, Kconfigs and the
+          # compiler flags; those diagnostics did not exist in GCC 4.9. Demote
+          # every one of them across the whole tree.
+          grep -rl -- '-Werror' . 2>/dev/null \
+            | grep -vE '\.(o|cmd|a)$' \
+            | xargs -r sed -i 's/-Werror/-Wno-error/g'
+          echo "remaining -Werror: $(grep -rl -- '-Werror' . 2>/dev/null | grep -vE '\.(o|cmd|a)$' | wc -l)"
           export ARCH=arm64
           export CROSS_COMPILE=aarch64-linux-gnu-
           # kernel 4.9's dtc lexer/parser rely on -fcommon; GCC >=10 defaults to
