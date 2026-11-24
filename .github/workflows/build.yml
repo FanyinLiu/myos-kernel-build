@@ -54,7 +54,10 @@ jobs:
           HOSTFLAGS="-Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89 -fcommon"
           # kernel 4.9 predates GCC 11's stricter diagnostics; demote the ones
           # that only fire because of newer compiler defaults.
-          KFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=implicit-int -Wno-error=int-conversion -Wno-error=return-mismatch -Wno-error=array-bounds -Wno-error=stringop-overflow -Wno-error=dangling-pointer -Wno-error=use-after-free"
+          # -Wno-error (blanket) avoids "unknown option" failures on older GCCs,
+          # while implicit-function-declaration stays fatal because it silently
+          # truncates pointers at runtime.
+          KFLAGS="-Wno-error -Werror=implicit-function-declaration"
           make O=../out merge_kirin980_defconfig
           make O=../out olddefconfig
           make O=../out HOSTCFLAGS="$HOSTFLAGS" KCFLAGS="$KFLAGS" -j"$(nproc)" Image.gz
