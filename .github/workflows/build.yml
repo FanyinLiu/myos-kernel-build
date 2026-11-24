@@ -19,9 +19,11 @@ jobs:
             libelf-dev cpio rsync wget xz-utils git
           # The Huawei kernel requires the exact toolchain from its README
           # (aarch64-linux-android-4.9). Newer GCC trips on its 4.9-era APIs.
-          git clone --depth 1 \
-            https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
+          git clone --depth 1 -b google \
+            https://github.com/growtopiajaw/aarch64-linux-android-4.9 \
             "$HOME/tc"
+          ls "$HOME/tc/bin" | head -5
+          chmod +x "$HOME/tc/bin/"* 2>/dev/null || true
           "$HOME/tc/bin/aarch64-linux-android-gcc" --version | head -1
 
       - name: Fetch kernel source (mirrored release asset)
