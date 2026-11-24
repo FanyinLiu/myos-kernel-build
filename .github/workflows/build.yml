@@ -52,9 +52,12 @@ jobs:
           # kernel 4.9's dtc lexer/parser rely on -fcommon; GCC >=10 defaults to
           # -fno-common and the host build dies with "multiple definition of yylloc"
           HOSTFLAGS="-Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89 -fcommon"
+          # kernel 4.9 predates GCC 11's stricter diagnostics; demote the ones
+          # that only fire because of newer compiler defaults.
+          KFLAGS="-Wno-error=incompatible-pointer-types -Wno-error=implicit-function-declaration -Wno-error=implicit-int -Wno-error=int-conversion -Wno-error=return-mismatch -Wno-error=array-bounds -Wno-error=stringop-overflow -Wno-error=dangling-pointer -Wno-error=use-after-free"
           make O=../out merge_kirin980_defconfig
           make O=../out olddefconfig
-          make O=../out HOSTCFLAGS="$HOSTFLAGS" -j"$(nproc)" Image.gz
+          make O=../out HOSTCFLAGS="$HOSTFLAGS" KCFLAGS="$KFLAGS" -j"$(nproc)" Image.gz
 
       - name: Collect artifacts
         run: |
