@@ -60,10 +60,14 @@ jobs:
           # kernel 4.9's dtc lexer/parser rely on -fcommon; GCC >=10 defaults to
           # -fno-common and the host build dies with "multiple definition of yylloc"
           HOSTFLAGS="-Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89 -fcommon"
+          # GCC 9 still fires warnings Huawei's GCC 4.9 never emitted, and their
+          # tree carries scattered -Werror; demote them but keep implicit
+          # function declarations fatal (they truncate pointers at runtime).
+          KFLAGS="-Wno-error -Werror=implicit-function-declaration"
           make O=../out merge_kirin980_defconfig
           # keep the config self-consistent with this compiler
           make O=../out olddefconfig
-          make O=../out HOSTCFLAGS="$HOSTFLAGS" -j"$(nproc)" Image.gz
+          make O=../out HOSTCFLAGS="$HOSTFLAGS" KCFLAGS="$KFLAGS" -j"$(nproc)" Image.gz
 
       - name: Collect artifacts
         shell: bash
