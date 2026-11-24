@@ -29,13 +29,11 @@ jobs:
 
       - name: Fetch kernel source (mirrored release asset)
         shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           # Huawei's own CDN is too slow from GitHub runners, so the tarball is
-          # mirrored as a release asset in this repo (see release kernel-source-v1).
-          curl -sSL -H "Authorization: token $GH_TOKEN" \
+          # mirrored as a public release asset in this repo (release kernel-source-v1).
+          curl -sSL --retry 3 --retry-delay 5 \
             -o src.tar.gz \
             "https://github.com/${GITHUB_REPOSITORY}/releases/download/kernel-source-v1/yale_pie_opensource.tar.gz"
           ls -lh src.tar.gz
