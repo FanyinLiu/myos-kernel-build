@@ -16,8 +16,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential bc bison flex libssl-dev \
-            libelf-dev gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
-            cpio rsync wget xz-utils
+            libelf-dev cpio rsync wget xz-utils git
+          # The Huawei kernel requires the exact toolchain from its README
+          # (aarch64-linux-android-4.9). Newer GCC trips on its 4.9-era APIs.
+          git clone --depth 1 \
+            https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 \
+            "$HOME/tc"
+          "$HOME/tc/bin/aarch64-linux-android-gcc" --version | head -1
 
       - name: Fetch kernel source (mirrored release asset)
         env:
@@ -48,19 +53,13 @@ jobs:
           set -euo pipefail
           cd Code_Opensource/kernel
           export ARCH=arm64
-          export CROSS_COMPILE=aarch64-linux-gnu-
-          # kernel 4.9's dtc lexer/parser rely on -fcommon; GCC >=10 defaults to
-          # -fno-common and the host build dies with "multiple definition of yylloc"
+          export CROSS_COMPILE="$HOME/tc/bin/aarch64-linux-android-"
+          export PATH="$HOME/tc/bin:$PATH"
+          # host tools build with the distro GCC; kernel 4.9's dtc needs -fcommon
           HOSTFLAGS="-Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer -std=gnu89 -fcommon"
-          # kernel 4.9 predates GCC 11's stricter diagnostics; demote the ones
-          # that only fire because of newer compiler defaults.
-          # -Wno-error (blanket) avoids "unknown option" failures on older GCCs,
-          # while implicit-function-declaration stays fatal because it silently
-          # truncates pointers at runtime.
-          KFLAGS="-Wno-error -Werror=implicit-function-declaration"
           make O=../out merge_kirin980_defconfig
           make O=../out olddefconfig
-          make O=../out HOSTCFLAGS="$HOSTFLAGS" KCFLAGS="$KFLAGS" -j"$(nproc)" Image.gz
+          make O=../out HOSTCFLAGS="$HOSTFLAGS" -j"$(nproc)" Image.gz
 
       - name: Collect artifacts
         run: |
